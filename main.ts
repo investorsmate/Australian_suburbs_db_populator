@@ -3,14 +3,12 @@ import { config } from "dotenv";
 
 config();
 
-interface SuburbData {
-  scc_code: String[];
-  scc_name: String[];
-  ste_name: String[];
-  scc_type: String;
-}
+type SuburbData = [string, string, string, number, number];
 
-const data: SuburbData[] = require("./data/suburbs.json");
+interface SuburbDataObj {
+  [postcode: string]: SuburbData[];
+}
+const data: SuburbDataObj = require("./data/suburbs.json");
 
 const client = new Client({
   host: process.env.HOST,
@@ -29,14 +27,13 @@ async function main() {
   try {
     const query = `INSERT INTO suburbs (name, postcode, state) values ($1, $2, $3);`;
 
-    for (const suburb of data) {
-      const values = [
-        suburb.scc_name[0],
-        suburb.scc_code[0],
-        suburb.ste_name[0],
-      ];
-      await client.query(query, values);
-      console.log(`Inserted ${suburb.scc_name[0]}`);
+    for (const postcode in data) {
+      for (const suburbData of data[postcode]) {
+        const values = [suburbData[1], suburbData[0], suburbData[2]];
+
+        await client.query(query, values);
+        console.log(`Inserted ${suburbData[1]}`);
+      }
     }
   } catch (e: unknown) {
     console.log(e);
